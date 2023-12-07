@@ -21,7 +21,7 @@ int LVL = 1;
 int INDEX = 0;
 volatile int DONE = 0;
 
-/*
+
 void initialization_function(){
 	srand(time(NULL));
 	for(int i=0 ; i<MAX_LEVEL ; i++){
@@ -33,7 +33,7 @@ void delay()
 {
 	_delay_ms(700);
 }
-
+/*
 void LCD_commander( unsigned char command )
 {
 	LCD_DATA = command;
@@ -154,23 +154,46 @@ void initialize_ports()
 	PORTE |= 0b00110000; //turn off port e
 	
 	//turn on all LEDs
-	PORTD &= 0x00;
-	PORTE &=  0b11001111;
+	//PORTD &= 0x00;
+	//PORTE &=  0b11001111;
 	
 	return;
 }
 
-void light_4_leds()
+//choose which led to light up
+void light_simon_led(int led_to_light)
 {
+	//0 means on, 1 means off
+	PORTD |= 0xFF; //turn off portd
+	PORTE |= 0b00110000; //turn off port e
+	
+	switch(led_to_light)
+	{
+		case 1: //turn on port D bit 0 (1st led)
+			PORTD &= ~(1<<PORTD7);
+			break;
+		case 2: //turn on port D bit 1 (2nd led)
+			PORTD &= ~(1<<PORTD6);
+			break;
+		case 3: //turn on port D bit 4 (4th led)
+			PORTD &= ~(1<<PORTD4);
+			break;
+		case 4: //turn on port E bit 5 (5th led)
+			PORTE &= (1<<PORTE6);
+			break;
+		default:
+			break;
+	}
 	return;
 }
 
 int main(void)
 {
 	initialize_ports();
+	light_simon_led(4);
+	//delay()
 	//PORTD = 0xFF;
 	while(1);
-	//PORTD |= 0x00;
 	/*
 	//TIMSK0 = 1;
 	//MCUCSR0 = 1;
