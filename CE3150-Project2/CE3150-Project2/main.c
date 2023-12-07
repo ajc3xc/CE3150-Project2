@@ -4,15 +4,17 @@
 	Date: 12/5/2023
 */
 
-#define F_CPU 8000000UL
+#define F_CPU 16000000UL
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include <stdio.h>
 #include <time.h>
 
-//10 levels seems reasonable
-#define MAX_LEVEL 9
+//8 levels seems reasonable for a demo
+//theoretically, 16 levels is possible with the middle right led
+//but I need to demonstrate what happens when the timer overflows
+#define MAX_LEVEL 8
 #define	LCD_DATA  PORTC
 #define	LCD_COMMAND  PORTD
 
@@ -21,6 +23,9 @@ char SEQUENCE[MAX_LEVEL];
 int LVL = 1;
 int INDEX = 0;
 volatile int DONE = 0;
+int timerOverflows[3]; //array checking whether the timer has overflowed or not
+
+//
 
 
 void initialization_function(){
@@ -173,7 +178,7 @@ void light_simon_led(int led_to_light)
 	PORTD |= (1<<PORTD7);
 	PORTD |= (1<<PORTD6);
 	PORTD |= (1<<PORTD4);
-	PORTE |= (1<<PORTE6);
+	PORTE |= (1<<PORTE5);
 	
 	switch(led_to_light)
 	{
@@ -187,7 +192,7 @@ void light_simon_led(int led_to_light)
 			PORTD &= ~(1<<PORTD4);
 			break;
 		case 4: //turn on port E bit 5 (4th led)
-			PORTE &= (1<<PORTE6);
+			PORTE &= ~(1<<PORTE5);
 			break;
 		default:
 			break;
@@ -205,9 +210,37 @@ void display_level_leds()
 	
 	//this logic only works if there is up to 8 levels, and there isn't a level 0
 	//as there is only 3 leds to display the level
-	if (LVL==0 || LVL > 8)	return;
+	if (LVL==0 || LVL > MAX_LEVEL)	return;
 	//display current levels on leds
 	PORTD &= ~(LVL-1);
+	
+}
+
+ISR(TIMER0_COMPA_vect) {
+	TCCR0B = 0;
+	// Timer/Counter 0 Compare Match A interrupt service routine
+	timerOverflows[0]=1;
+}
+
+void time_delay() {
+	// Set the Timer/Counter 0 Mode to CTC (Clear Timer on Compare Match)
+	TCCR0A |= (1 << WGM01);
+
+	// Set the value to compare (for 1Hz frequency with a 16MHz clock and 1024 prescaler)
+	OCR0A = 156;
+
+	// Enable Timer/Counter 0 Compare Match A interrupt
+	TIMSK0 |= (1 << OCIE0A);
+
+	// Set the prescaler to 1024 (to get a 16MHz / 1024 = 15625 Hz timer frequency)
+	TCCR0B |= (1 << CS02) | (1 << CS00);
+
+	// Enable global interrupts
+	sei();
+	
+	while(timerOverflows[0]==0);
+	
+	
 	
 }
 
@@ -216,9 +249,10 @@ int main(void)
 {
 	initialize_ports();
 	//PORTD = 0x00;
+	//display_level_leds();
 	light_simon_led(4);
-	display_level_leds();
-	//delay()c
+	//time_delay();
+	//light_simon_led(1);
 	while(1);
 	/*
 	//TIMSK0 = 1;
@@ -230,7 +264,7 @@ int main(void)
 	LCD_initializer();
 	exit;
 	
-	/*
+	
 	while (LVL <= MAX_LEVEL)
 	{
 		LCD_clean();
