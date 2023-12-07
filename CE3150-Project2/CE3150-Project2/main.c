@@ -11,7 +11,8 @@
 #include <stdio.h>
 #include <time.h>
 
-#define MAX_LEVEL 250
+//10 levels seems reasonable
+#define MAX_LEVEL 9
 #define	LCD_DATA  PORTC
 #define	LCD_COMMAND  PORTD
 
@@ -161,24 +162,31 @@ void initialize_ports()
 }
 
 //choose which led to light up
+//used when selecting a button
 void light_simon_led(int led_to_light)
 {
 	//0 means on, 1 means off
-	PORTD |= 0xFF; //turn off portd
-	PORTE |= 0b00110000; //turn off port e
+	//PORTD |= 0xFF; //turn off portd
+	//PORTE |= 0b00110000; //turn off port e
+	
+	//turn off simon specific leds
+	PORTD |= (1<<PORTD7);
+	PORTD |= (1<<PORTD6);
+	PORTD |= (1<<PORTD4);
+	PORTE |= (1<<PORTE6);
 	
 	switch(led_to_light)
 	{
-		case 1: //turn on port D bit 0 (1st led)
+		case 1: //turn on port D bit 7 (9th led)
 			PORTD &= ~(1<<PORTD7);
 			break;
-		case 2: //turn on port D bit 1 (2nd led)
+		case 2: //turn on port D bit 1 (8th led)
 			PORTD &= ~(1<<PORTD6);
 			break;
-		case 3: //turn on port D bit 4 (4th led)
+		case 3: //turn on port D bit 4 (6th led)
 			PORTD &= ~(1<<PORTD4);
 			break;
-		case 4: //turn on port E bit 5 (5th led)
+		case 4: //turn on port E bit 5 (4th led)
 			PORTE &= (1<<PORTE6);
 			break;
 		default:
@@ -187,12 +195,30 @@ void light_simon_led(int led_to_light)
 	return;
 }
 
+//display the current level on D1-D3 as 3 bit value
+void display_level_leds()
+{
+	//turn off leds 1-3
+	PORTD |= (1<<PORTD0);
+	PORTD |= (1<<PORTD1);
+	PORTD |= (1<<PORTD2);
+	
+	//this logic only works if there is up to 8 levels, and there isn't a level 0
+	//as there is only 3 leds to display the level
+	if (LVL==0 || LVL > 8)	return;
+	//display current levels on leds
+	PORTD &= ~(LVL-1);
+	
+}
+
+
 int main(void)
 {
 	initialize_ports();
+	//PORTD = 0x00;
 	light_simon_led(4);
-	//delay()
-	//PORTD = 0xFF;
+	display_level_leds();
+	//delay()c
 	while(1);
 	/*
 	//TIMSK0 = 1;
