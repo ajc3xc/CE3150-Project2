@@ -4,7 +4,7 @@
 	Date: 12/5/2023
 */
 
-#define F_CPU 16000000UL
+#define F_CPU 8000000UL
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/interrupt.h>
@@ -17,6 +17,11 @@
 #define MAX_LEVEL 8
 #define	LCD_DATA  PORTC
 #define	LCD_COMMAND  PORTD
+
+#define TIMER_FREQUENCY 1
+#define TIMER_PRESCALER 1024
+#define TIMER_VALUE 7813
+
 
 
 char SEQUENCE[MAX_LEVEL];
@@ -216,32 +221,25 @@ void display_level_leds()
 	
 }
 
-ISR(TIMER0_COMPA_vect) {
-	TCCR0B = 0;
-	// Timer/Counter 0 Compare Match A interrupt service routine
-	timerOverflows[0]=1;
-}
+int timer_counter = 0;
 
 void time_delay() {
-	// Set the Timer/Counter 0 Mode to CTC (Clear Timer on Compare Match)
-	TCCR0A |= (1 << WGM01);
-
-	// Set the value to compare (for 1Hz frequency with a 16MHz clock and 1024 prescaler)
-	OCR0A = 156;
-
-	// Enable Timer/Counter 0 Compare Match A interrupt
-	TIMSK0 |= (1 << OCIE0A);
-
-	// Set the prescaler to 1024 (to get a 16MHz / 1024 = 15625 Hz timer frequency)
-	TCCR0B |= (1 << CS02) | (1 << CS00);
-
-	// Enable global interrupts
+	TCCR1B |= (1 << CS12) | (1 << CS10);
+	TCNT1 = TIMER_VALUE;
+	TIMSK1 |= (1 << TOIE1);
 	sei();
 	
-	while(timerOverflows[0]==0);
-	
-	
-	
+	while(timer_counter < 1);
+}
+
+ISR(TIMER1_OVF_vect) {
+	timer_counter++;
+	if (timer_counter >= 1) {
+		// Disable Timer/Counter1 overflow interrupt
+		TIMSK1 &= ~(1 << TOIE1);
+		PORTD &= ~(1<<PORTD4);
+	}
+	TCNT1 = TIMER_VALUE;
 }
 
 
@@ -251,8 +249,8 @@ int main(void)
 	//PORTD = 0x00;
 	//display_level_leds();
 	light_simon_led(4);
-	//time_delay();
-	//light_simon_led(1);
+	time_delay();
+	light_simon_led(1);
 	while(1);
 	/*
 	//TIMSK0 = 1;
