@@ -33,7 +33,7 @@ int timerOverflows[3]; //array checking whether the timer has overflowed or not
 //
 
 
-void initialization_function(){
+void generate_simon_pattern(){
 	srand(time(NULL));
 	for(int i=0 ; i<MAX_LEVEL ; i++){
 		SEQUENCE[i] = (rand() % 4) + 1; //generate a random number from 1-4 inclusive
@@ -270,14 +270,70 @@ void half_second_delay()
 	
 }
 
+//turn off all the lights
+void turn_off_leds()
+{
+	PORTD = 0xFF;
+	PORTE |= (1<<PORTE5);
+}
+
+//call the function if the game was lost
+void fail_game()
+{
+	//turn off LEDs
+	turn_off_leds();
+	
+	//display an x pattern on the LEDs
+	PORTD &= ~(1<<PORTD7);
+	PORTD &= ~(1<<PORTD5);
+	PORTE &= ~(1<<PORTE5);
+	PORTD &= ~(1<<PORTD2);
+	PORTD &= ~(1<<PORTD0);
+	half_second_delay();
+	half_second_delay();
+	
+	//turn off the LEDs again
+	turn_off_leds();
+	
+	
+	//reset to level 1
+	LVL = 1;
+	
+	//regenerate pattern for simon board
+	generate_simon_pattern();
+	return;
+}
+
+//call function if the game was won
+void win_game()
+{
+	//turn off LEDs
+	turn_off_leds();
+	
+	//turn on all LEDs
+	PORTD = 0x00;
+	PORTE = ~(1<<PORTE5);
+	half_second_delay();
+	half_second_delay();
+	
+	//turn off LEDs
+	turn_off_leds();
+	
+	//reset to level 1
+	LVL = 1;
+	
+	//regenerate pattern for simon board
+	generate_simon_pattern();
+	return;
+}
 
 int main(void)
 {
 	initialize_ports();
-	//PORTD = 0x00;
-	//display_level_leds();
+	win_game();
+	return;
 	
-	initialization_function();
+	generate_simon_pattern();
 	
 	LVL = MAX_LEVEL;
 	
@@ -289,6 +345,7 @@ int main(void)
 		half_second_delay();
 	}
 	
+	fail_game();
 	while(1);
 	
 	/*
