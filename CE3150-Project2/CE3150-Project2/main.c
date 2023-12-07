@@ -24,7 +24,7 @@
 
 
 
-char SEQUENCE[MAX_LEVEL];
+int SEQUENCE[MAX_LEVEL];
 int LVL = 1;
 int INDEX = 0;
 volatile int DONE = 0;
@@ -36,7 +36,7 @@ int timerOverflows[3]; //array checking whether the timer has overflowed or not
 void initialization_function(){
 	srand(time(NULL));
 	for(int i=0 ; i<MAX_LEVEL ; i++){
-		SEQUENCE[i] = 1 << (rand() % 4);
+		SEQUENCE[i] = (rand() % 4) + 1; //generate a random number from 1-4 inclusive
 	}
 }
 
@@ -247,20 +247,20 @@ ISR(TIMER1_OVF_vect) {
 #define HALF_SECOND_ITERATIONS 15
 //generates a half second delay on timer 0
 // (255 * 1024 * 15) / (8 * 10^6) = .4896 seconds
-void light_change_delay()
+void half_second_delay()
 {
 	TCNT0 = HALF_SECOND_TIMER_VAL;
 	TCCR0A = 0x00;
 	TCCR0B |= (1 << CS12) | (1 << CS10); // normal clock, prescaler 1024
 	
 	int counter = 0;
-	while(inner_counter < HALF_SECOND_ITERATIONS)
+	while(counter < HALF_SECOND_ITERATIONS)
 	{
 		//poll until timer overflows
 		while (!(TIFR0 & (1<<TOV0)));
 		TCNT0 = HALF_SECOND_TIMER_VAL; //reset tcnt0
 		TIFR0 = 1<<TOV0; //need to reset the overflow flag bit
-		inner_counter++;
+		counter++;
 	}
 	
 	//turn off timer0
@@ -276,15 +276,22 @@ int main(void)
 	initialize_ports();
 	//PORTD = 0x00;
 	//display_level_leds();
-	light_simon_led(4);
-	light_change_delay();
-	light_simon_led(1);
+	
+	initialization_function();
+	
+	LVL = MAX_LEVEL;
+	
+	for(int i=0; i<LVL; i++){
+		light_simon_led(SEQUENCE[i]);
+		half_second_delay();
+		half_second_delay();
+		light_simon_led(0);
+		half_second_delay();
+	}
+	
 	while(1);
+	
 	/*
-	//TIMSK0 = 1;
-	//MCUCSR0 = 1;
-	//MCUCSR = 1<<ISC2;   // rising edge of external interrupt generates interrupt request
-	//GICR = (1<<INT2);   // enable external interrupt on int2
 	sei();				// set interrupt enable
 	initialization_function();
 	LCD_initializer();
