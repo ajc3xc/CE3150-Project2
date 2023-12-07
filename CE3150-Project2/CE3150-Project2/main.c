@@ -205,6 +205,8 @@ void light_simon_led(int led_to_light)
 	return;
 }
 
+
+
 //display the current level on D1-D3 as 3 bit value
 void display_level_leds()
 {
@@ -221,8 +223,7 @@ void display_level_leds()
 	
 }
 
-int timer_counter = 0;
-
+int timer_counter = 1;
 void time_delay() {
 	TCCR1B |= (1 << CS12) | (1 << CS10);
 	TCNT1 = TIMER_VALUE;
@@ -242,6 +243,33 @@ ISR(TIMER1_OVF_vect) {
 	TCNT1 = TIMER_VALUE;
 }
 
+#define HALF_SECOND_TIMER_VAL 0
+#define HALF_SECOND_ITERATIONS 15
+//generates a half second delay on timer 0
+// (255 * 1024 * 15) / (8 * 10^6) = .4896 seconds
+void light_change_delay()
+{
+	TCNT0 = HALF_SECOND_TIMER_VAL;
+	TCCR0A = 0x00;
+	TCCR0B |= (1 << CS12) | (1 << CS10); // normal clock, prescaler 1024
+	
+	int counter = 0;
+	while(inner_counter < HALF_SECOND_ITERATIONS)
+	{
+		//poll until timer overflows
+		while (!(TIFR0 & (1<<TOV0)));
+		TCNT0 = HALF_SECOND_TIMER_VAL; //reset tcnt0
+		TIFR0 = 1<<TOV0; //need to reset the overflow flag bit
+		inner_counter++;
+	}
+	
+	//turn off timer0
+	TCCR0A = 0x00;
+	TCCR0B = 0x00;
+	TIFR0 = 1<<TOV0;
+	
+}
+
 
 int main(void)
 {
@@ -249,7 +277,7 @@ int main(void)
 	//PORTD = 0x00;
 	//display_level_leds();
 	light_simon_led(4);
-	time_delay();
+	light_change_delay();
 	light_simon_led(1);
 	while(1);
 	/*
