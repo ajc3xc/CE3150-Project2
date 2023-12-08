@@ -15,23 +15,23 @@
 //theoretically, 16 levels is possible with the middle right led
 //but I need to demonstrate what happens when the timer overflows
 #define MAX_LEVEL 8
-#define	LCD_DATA  PORTC
-#define	LCD_COMMAND  PORTD
 
+//used in half second delay function
+#define HALF_SECOND_TIMER_VAL 0
+#define HALF_SECOND_ITERATIONS 15
 
-
-int SEQUENCE[MAX_LEVEL];
-int LVL = 1;
+//used in minute time limit function
+#define FOUR_SECOND_TIME_VAL -31250
+#define TIMER_1_ITERATIONS 15
+int timer_1_iterations_counter = 0;
 int timed_out = 0;
 
-void generate_simon_pattern(){
-	//since this can be called multiple times, srand shouldn't be here (it regenerates the same pattern)
-	//it should be in main
-	//srand(time(NULL));
-	for(int i=0 ; i<MAX_LEVEL ; i++){
-		SEQUENCE[i] = (rand() % 4) + 1; //generate a random number from 1-4 inclusive
-	}
-}
+//used for playing the game
+int SEQUENCE[MAX_LEVEL];
+int LVL = 1;
+
+//////////////////////////////////////////////////////////////////////////
+//						Initialization Functions						//
 
 void initialize_ports()
 {
@@ -51,66 +51,14 @@ void initialize_ports()
 	return;
 }
 
-//choose which led to light up
-//used when selecting a button
-void light_simon_led(int led_to_light)
-{
-	//0 means on, 1 means off
-	//PORTD |= 0xFF; //turn off portd
-	//PORTE |= 0b00110000; //turn off port e
-	
-	//turn off simon specific leds
-	PORTD |= (1<<PORTD7);
-	PORTD |= (1<<PORTD6);
-	PORTD |= (1<<PORTD4);
-	PORTE |= (1<<PORTE5);
-	
-	switch(led_to_light)
-	{
-		case 1: //turn on port D bit 7 (9th led)
-			PORTE &= ~(1<<PORTE5);
-			break;
-		case 2: //turn on port D bit 1 (8th led)
-			PORTD &= ~(1<<PORTD4);
-			break;
-		case 3: //turn on port D bit 4 (6th led)
-			PORTD &= ~(1<<PORTD6);
-			break;
-		case 4: //turn on port E bit 5 (4th led)
-			PORTD &= ~(1<<PORTD7);
-			break;
-		default:
-			break;
-	}
-	return;
-}
+//						Initialization Functions						//
+//////////////////////////////////////////////////////////////////////////
 
 
-
-//display the current level on D1-D4 as 3 bit value
-void display_level_leds()
-{
-	//turn off leds 1-3
-	PORTD |= (1<<PORTD0);
-	PORTD |= (1<<PORTD1);
-	PORTD |= (1<<PORTD2);
-	
-	//this logic only works if there is up to 8 levels, and there isn't a level 0
-	//as there is only 3 leds to display the level
-	if (LVL==0 || LVL > MAX_LEVEL)	return;
-	//display current levels on leds
-	PORTD &= ~(LVL); //(used first 4 leds (LED1-4))
-	
-}
-
-
-int timer_counter = 1;
-
+//////////////////////////////////////////////////////////////////////////
+//						 Time Delay Functions							//
 //1 minute time delay
 //used when playing the simon game
-
-#define FOUR_SECOND_TIME_VAL -31250
-#define TIMER_1_MULTIPLIER 15
 void start_minute_time_limit() {
 	TCNT1 = FOUR_SECOND_TIME_VAL;
 	TCCR1A = 0x00; //normal clock
@@ -119,23 +67,22 @@ void start_minute_time_limit() {
 	sei();
 }
 
+// called every 4 seconds
 ISR(TIMER1_OVF_vect) {
-	if (timer_counter < TIMER_1_MULTIPLIER) {
+	if (timer_1_iterations_counter < TIMER_1_ITERATIONS) {
 		TCNT1 = FOUR_SECOND_TIME_VAL;
-		timer_counter++;	
+		timer_1_iterations_counter++;	
 	}
 	else
 	{
 		TIMSK1 &= ~(1 << TOIE1);
 		TCNT1 = 0;
-		timer_counter = 0;
+		timer_1_iterations_counter = 0;
 		timed_out = 1;
 	}
 }
 
 
-#define HALF_SECOND_TIMER_VAL 0
-#define HALF_SECOND_ITERATIONS 15
 //generates a half second delay on timer 0
 // (255 * 1024 * 15) / (8 * 10^6) = .4896 seconds
 void half_second_delay()
@@ -161,13 +108,21 @@ void half_second_delay()
 	
 }
 
-//turn off all the lights
-void turn_off_leds()
+//used by play_sequence function
+//returns 2 ^ (power_to + 1)
+//must be 1, 2, 3, 4, or it returns 0
+int two_to_the_power_of(int power_to)
 {
-	PORTD = 0xFF;
-	PORTE |= (1<<PORTE5);
+	if ((power_to <= 0) || (power_to > 4)) return 0;
+	
+	int return_val = 1;
+	for(int j=0; j <= power_to; j++)
+	{
+		return_val *= 2;
+	}
+	
+	return return_val;
 }
-
 
 //plays the speaker for 1 second
 void play_speaker(int divisor)
@@ -200,6 +155,22 @@ void play_speaker(int divisor)
 	TCCR2A = 0x00;
 	TCCR2B = 0x00;
 	TIFR2 = 1<<TOV2;
+}
+
+//	Time Delay Functions (basically any function utilizing the timers)	//
+//////////////////////////////////////////////////////////////////////////
+
+
+
+
+//////////////////////////////////////////////////////////////////////////
+//					Game End Functions									//
+
+//turn off all the lights
+void turn_off_leds()
+{
+	PORTD = 0xFF;
+	PORTE |= (1<<PORTE5);
 }
 
 //call the function if the game was lost
@@ -250,31 +221,20 @@ void win_game()
 	return;
 }
 
-//used by play_sequence function
-//returns 2 ^ (power_to + 1)
-//must be 1, 2, 3, 4, or it returns 0
-int two_to_the_power_of(int power_to)
-{
-	if ((power_to <= 0) || (power_to > 4)) return 0;
-	
-	int return_val = 1;
-	for(int j=0; j <= power_to; j++)
-	{
-		return_val *= 2;
-	}
-	
-	return return_val;
-}
+//					Game End Functions									//
+//////////////////////////////////////////////////////////////////////////
 
-//plays the sequence of leds you need to get right
-//sequence of (1, 2, 3, 4) values
-void play_sequence()
-{
-	for(int i=0; i<LVL; i++){
-		light_simon_led(SEQUENCE[i]);
-		play_speaker(two_to_the_power_of(SEQUENCE[i]));
-		light_simon_led(0);
-		half_second_delay();
+
+
+
+//////////////////////////////////////////////////////////////////////////
+//					Game Start Functions								//
+
+void generate_simon_pattern(){
+	//since this can be called multiple times, srand shouldn't be here (it regenerates the same pattern)
+	//it should be in main
+	for(int i=0 ; i<MAX_LEVEL ; i++){
+		SEQUENCE[i] = (rand() % 4) + 1; //generate a random number from 1-4 inclusive
 	}
 }
 
@@ -298,6 +258,77 @@ void wait_until_ready_to_play()
 		PORTD ^= (1<<PORTD0);
 	}
 	PORTD |= (1<<PORTD0);
+}
+
+//					Game Start Functions								//
+//////////////////////////////////////////////////////////////////////////
+
+
+
+
+//////////////////////////////////////////////////////////////////////////
+//				Game Playing Functions									//
+
+//choose which led to light up
+//used when selecting a button
+void light_simon_led(int led_to_light)
+{
+	//0 means on, 1 means off
+	//PORTD |= 0xFF; //turn off portd
+	//PORTE |= 0b00110000; //turn off port e
+	
+	//turn off simon specific leds
+	PORTD |= (1<<PORTD7);
+	PORTD |= (1<<PORTD6);
+	PORTD |= (1<<PORTD4);
+	PORTE |= (1<<PORTE5);
+	
+	switch(led_to_light)
+	{
+		case 1: //turn on port D bit 7 (9th led)
+			PORTE &= ~(1<<PORTE5);
+			break;
+		case 2: //turn on port D bit 1 (8th led)
+			PORTD &= ~(1<<PORTD4);
+			break;
+		case 3: //turn on port D bit 4 (6th led)
+			PORTD &= ~(1<<PORTD6);
+			break;
+		case 4: //turn on port E bit 5 (4th led)
+			PORTD &= ~(1<<PORTD7);
+			break;
+		default:
+			break;
+	}
+	return;
+}
+
+//display the current level on D1-D4 as 3 bit value
+void display_level_leds()
+{
+	//turn off leds 1-3
+	PORTD |= (1<<PORTD0);
+	PORTD |= (1<<PORTD1);
+	PORTD |= (1<<PORTD2);
+	
+	//this logic only works if there is up to 8 levels, and there isn't a level 0
+	//as there is only 3 leds to display the level
+	if (LVL==0 || LVL > MAX_LEVEL)	return;
+	//display current levels on leds
+	PORTD &= ~(LVL); //(used first 4 leds (LED1-4))
+	
+}
+
+//plays the sequence of leds you need to get right
+//sequence of (1, 2, 3, 4) values
+void play_sequence()
+{
+	for(int i=0; i<LVL; i++){
+		light_simon_led(SEQUENCE[i]);
+		play_speaker(two_to_the_power_of(SEQUENCE[i]));
+		light_simon_led(0);
+		half_second_delay();
+	}
 }
 
 //wait until a button clicked, then return the value
@@ -358,6 +389,7 @@ void play_game()
 {
 	int button_state = 0;
 	
+	//regenerates the list of led patterns
 	generate_simon_pattern();
 	LVL = 1;
 	
@@ -395,18 +427,23 @@ void play_game()
 	}
 }
 
+//				Game Playing Functions									//
+//////////////////////////////////////////////////////////////////////////
+
 int main(void)
 {
-	initialize_ports();
-	srand(time(NULL));
+	initialize_ports(); //sets which ports to use as i/o, turns off all the leds
+	srand(time(NULL)); //set random number seed (it is always the same initial seed, but I just don't care)
 	while(1)
 	{
+		//display blinking red led
 		wait_until_ready_to_play();
+		//wait a second after button pressed
 		half_second_delay();
 		half_second_delay();
+		//play game
 		play_game();
 	}
-	generate_simon_pattern();
 
 	return 0;
 }
