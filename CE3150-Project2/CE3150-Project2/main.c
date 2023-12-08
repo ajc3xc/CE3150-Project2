@@ -4,6 +4,7 @@
 	Date: 12/5/2023
 */
 
+// using 8mhz to make time delays easier
 #define F_CPU 8000000UL
 #include <avr/io.h>
 #include <util/delay.h>
@@ -12,8 +13,8 @@
 #include <time.h>
 
 //8 levels seems reasonable for a demo
-//theoretically, 16 levels is possible with the middle right led
-//but I need to demonstrate what happens when the timer overflows
+//theoretically, 15 levels is possible with the middle right led
+//but I need to demonstrate what happens when the timer overflows for the video
 #define MAX_LEVEL 8
 
 //used in half second delay function
