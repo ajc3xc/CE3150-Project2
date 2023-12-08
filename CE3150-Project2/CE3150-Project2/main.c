@@ -251,7 +251,7 @@ void half_second_delay()
 {
 	TCNT0 = HALF_SECOND_TIMER_VAL;
 	TCCR0A = 0x00;
-	TCCR0B |= (1 << CS12) | (1 << CS10); // normal clock, prescaler 1024
+	TCCR0B |= 0x05; // normal clock, prescaler 1024
 	
 	int counter = 0;
 	while(counter < HALF_SECOND_ITERATIONS)
@@ -277,8 +277,42 @@ void turn_off_leds()
 	PORTE |= (1<<PORTE5);
 }
 
+
+//plays the speaker for 1 second
+void play_speaker(int divisor)
+{
+	//divisor must be 2^n
+	if (!(divisor && !(divisor & (divisor-1)))) return;
+	 
+	//const int TIMER_VAL = 256/divisor - 1
+	const int TIMER_VAL = (255 - ((256/divisor) - 1));
+	TCNT2 = TIMER_VAL;
+	
+	TCCR2A = 0x00; //normal clock
+	TCCR2B |= 0x07; // prescaler 1024
+	
+	int counter = 0;
+	const int MAX_ITERATIONS = 30 * divisor;
+	//total time = 1024 * (255 - (256/divisor - 1)) * 30 * divisor
+	while(counter < MAX_ITERATIONS)
+	{
+		//poll until timer overflows
+		while (!(TIFR2 & (1<<TOV2)));
+		PORTE ^= (1<<PORTE4); //toggle PORTE6
+		//PORTE ^= (1<<PORTE5); //toggle PORTE5
+		TCNT2 = TIMER_VAL; //reset tcnt2
+		TIFR2 = 1<<TOV2; //need to reset the overflow flag bit
+		counter++;
+	}
+	
+	//turn off timer0
+	TCCR2A = 0x00;
+	TCCR2B = 0x00;
+	TIFR2 = 1<<TOV2;
+}
+
 //call the function if the game was lost
-void fail_game()
+void lose_game()
 {
 	//turn off LEDs
 	turn_off_leds();
@@ -289,8 +323,7 @@ void fail_game()
 	PORTE &= ~(1<<PORTE5);
 	PORTD &= ~(1<<PORTD2);
 	PORTD &= ~(1<<PORTD0);
-	half_second_delay();
-	half_second_delay();
+	play_speaker(2);
 	
 	//turn off the LEDs again
 	turn_off_leds();
@@ -313,8 +346,7 @@ void win_game()
 	//turn on all LEDs
 	PORTD = 0x00;
 	PORTE = ~(1<<PORTE5);
-	half_second_delay();
-	half_second_delay();
+	play_speaker(64);
 	
 	//turn off LEDs
 	turn_off_leds();
@@ -330,22 +362,17 @@ void win_game()
 int main(void)
 {
 	initialize_ports();
-	win_game();
-	return;
-	
 	generate_simon_pattern();
 	
 	LVL = MAX_LEVEL;
 	
 	for(int i=0; i<LVL; i++){
 		light_simon_led(SEQUENCE[i]);
-		half_second_delay();
-		half_second_delay();
+		play_speaker(4);
 		light_simon_led(0);
 		half_second_delay();
 	}
 	
-	fail_game();
 	while(1);
 	
 	/*
