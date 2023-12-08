@@ -378,6 +378,7 @@ int two_to_the_power_of(int power_to)
 }
 
 //plays the sequence of leds you need to get right
+//sequence of (1, 2, 3, 4) values
 void play_sequence()
 {
 	for(int i=0; i<LVL; i++){
@@ -391,9 +392,22 @@ void play_sequence()
 
 //initial / restart 'screen'
 //press button 1 to escape it to play the game
-void press_button1_to_play()
+void wait_until_ready_to_play()
 {
-	
+	int waiting = 1;
+	while (waiting)
+	{
+		half_second_delay();
+		half_second_delay();
+		if (!(PINA & (1 << PINA0)))
+		{
+			waiting = 0;
+			while (!(PINA & (1 << PINA0))); //wait until unclicked
+		}
+		PORTD ^= (1<<PORTD0);
+	}
+	play_speaker(1);
+	PORTD |= (1<<PORTD0);
 }
 
 int main(void)
@@ -403,7 +417,8 @@ int main(void)
 	
 	LVL = MAX_LEVEL;
 	
-	play_sequence();
+	wait_until_ready_to_play();
+	//play_sequence();
 	return 1;
 	
 	int button_state = 0;
@@ -424,7 +439,7 @@ int main(void)
 		{
 			button_state = 2;
 			light_simon_led(button_state);
-			//while (!(PINA & (1 << PINA4)));
+			while (!(PINA & (1 << PINA4)));
 		}
 		//button 8 pressed
 		else if (!(PINA & (1 << PINA6)))
