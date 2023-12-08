@@ -157,10 +157,12 @@ ISR (INT2_vect)
 
 void initialize_ports()
 {
-	DDRD = 0xFF;
-	DDRE = 0b00110000;
+	DDRA = 0x00; //PINA input
+	DDRD = 0xFF; //DDRD input
+	DDRE = 0b00110000; //outputs PINE bits 5, 4, inputs bit 6
 	
 	//0 means on, 1 means off
+	PORTA |= 0xFF;
 	PORTD |= 0xFF; //turn off portd
 	PORTE |= 0b00110000; //turn off port e
 	
@@ -359,6 +361,17 @@ void win_game()
 	return;
 }
 
+//plays the sequence of leds you need to get right
+void play_sequence()
+{
+	for(int i=0; i<LVL; i++){
+		light_simon_led(SEQUENCE[i]);
+		play_speaker(4);
+		light_simon_led(0);
+		half_second_delay();
+	}
+}
+
 int main(void)
 {
 	initialize_ports();
@@ -366,10 +379,15 @@ int main(void)
 	
 	LVL = MAX_LEVEL;
 	
-	for(int i=0; i<LVL; i++){
-		light_simon_led(SEQUENCE[i]);
-		play_speaker(4);
-		light_simon_led(0);
+	//play_sequence();
+	
+	while(1)
+	{
+		//int value = (1<<PINE6);
+		if (!(PINE & (1 << PINE6))) PORTE &= ~(1<<PORTE5);
+		else if (PINE & (1 << PINE6)) PORTE |= (1<<PORTE5);
+		//if (PINA7 == 1)	PORTD &= ~(1<<PORTD7);
+		PORTD = PINA;
 		half_second_delay();
 	}
 	
