@@ -18,14 +18,11 @@
 #define	LCD_DATA  PORTC
 #define	LCD_COMMAND  PORTD
 
-#define TIMER_FREQUENCY 1
-#define TIMER_PRESCALER 1024
-#define TIMER_VALUE 7813
-
 
 
 int SEQUENCE[MAX_LEVEL];
 int LVL = 1;
+int timed_out = 0;
 
 void generate_simon_pattern(){
 	//since this can be called multiple times, srand shouldn't be here (it regenerates the same pattern)
@@ -90,7 +87,7 @@ void light_simon_led(int led_to_light)
 
 
 
-//display the current level on D1-D3 as 3 bit value
+//display the current level on D1-D4 as 3 bit value
 void display_level_leds()
 {
 	//turn off leds 1-3
@@ -106,27 +103,36 @@ void display_level_leds()
 	
 }
 
-/*
+
 int timer_counter = 1;
-void time_delay() {
-	TCCR1B |= (1 << CS12) | (1 << CS10);
-	TCNT1 = TIMER_VALUE;
+
+//1 minute time delay
+//used when playing the simon game
+
+#define FOUR_SECOND_TIME_VAL -31250
+#define TIMER_1_MULTIPLIER 15
+void start_minute_time_limit() {
+	TCNT1 = FOUR_SECOND_TIME_VAL;
+	TCCR1A = 0x00; //normal clock
+	TCCR1B |= 0x05; // normal clock, prescaler 1024
 	TIMSK1 |= (1 << TOIE1);
 	sei();
-	
-	while(timer_counter < 1);
 }
 
 ISR(TIMER1_OVF_vect) {
-	timer_counter++;
-	if (timer_counter >= 1) {
-		// Disable Timer/Counter1 overflow interrupt
-		TIMSK1 &= ~(1 << TOIE1);
-		PORTD &= ~(1<<PORTD4);
+	if (timer_counter < TIMER_1_MULTIPLIER) {
+		TCNT1 = FOUR_SECOND_TIME_VAL;
+		timer_counter++;	
 	}
-	TCNT1 = TIMER_VALUE;
+	else
+	{
+		TIMSK1 &= ~(1 << TOIE1);
+		TCNT1 = 0;
+		timer_counter = 0;
+		timed_out = 1;
+	}
 }
-*/
+
 
 #define HALF_SECOND_TIMER_VAL 0
 #define HALF_SECOND_ITERATIONS 15
@@ -267,7 +273,6 @@ void play_sequence()
 	for(int i=0; i<LVL; i++){
 		light_simon_led(SEQUENCE[i]);
 		play_speaker(two_to_the_power_of(SEQUENCE[i]));
-		//play_speaker(SEQUENCE[i]*4);
 		light_simon_led(0);
 		half_second_delay();
 	}
@@ -295,7 +300,7 @@ void wait_until_ready_to_play()
 	PORTD |= (1<<PORTD0);
 }
 
-//wait until a buton clicked, then return the value
+//wait until a button clicked, then return the value
 int wait_until_button_clicked()
 {
 	int button_state = 0;
@@ -303,6 +308,10 @@ int wait_until_button_clicked()
 	{
 		//all these buttons wait until they're unpressed before continuing
 		//prevents unintentional button spamming
+		//the led is lit and the buzzer is played, and then waits until the button is released
+		//button_states 1, 2, 3, 4 = buttons 5, 6, 8, 9
+		//button_state 5 means the time limit was reached
+		
 		//button 5 pressed
 		if (!(PINE & (1 << PINE6)))
 		{
@@ -335,6 +344,11 @@ int wait_until_button_clicked()
 			play_speaker(two_to_the_power_of(button_state));
 			while (!(PINA & (1 << PINA7)));
 		}
+		else if((timed_out))
+		{
+			button_state = 5; //5 will always be invalid
+			timed_out = 0; //reset timed_out variable
+		}
 		light_simon_led(0); //turn off all led lights
 	}
 	return button_state;
@@ -360,6 +374,7 @@ void play_game()
 			display_level_leds();
 			play_sequence();
 			int buttons_pressed = 0;
+			start_minute_time_limit(); //minute time delay starts each level
 			while((buttons_pressed < LVL) && playing)
 			{
 				int button_clicked = wait_until_button_clicked();
@@ -371,6 +386,9 @@ void play_game()
 				}
 			}
 			if (playing) LVL++;
+			
+			//wait a second until moving to the next level
+			//that way the lights and sounds don't overlay
 			half_second_delay();
 			half_second_delay();
 		}
