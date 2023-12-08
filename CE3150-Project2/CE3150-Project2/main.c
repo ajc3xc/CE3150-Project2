@@ -361,15 +361,39 @@ void win_game()
 	return;
 }
 
+//used by play_sequence function
+//returns 2 ^ (power_to + 1)
+//must be 1, 2, 3, 4, or it returns 0
+int two_to_the_power_of(int power_to)
+{
+	if ((power_to <= 0) || (power_to > 4)) return 0;
+	
+	int return_val = 1;
+	for(int j=0; j <= power_to; j++)
+	{
+		return_val *= 2;
+	}
+	
+	return return_val;
+}
+
 //plays the sequence of leds you need to get right
 void play_sequence()
 {
 	for(int i=0; i<LVL; i++){
 		light_simon_led(SEQUENCE[i]);
-		play_speaker(4);
+		play_speaker(two_to_the_power_of(SEQUENCE[i]));
+		//play_speaker(SEQUENCE[i]*4);
 		light_simon_led(0);
 		half_second_delay();
 	}
+}
+
+//initial / restart 'screen'
+//press button 1 to escape it to play the game
+void press_button1_to_play()
+{
+	
 }
 
 int main(void)
@@ -379,7 +403,8 @@ int main(void)
 	
 	LVL = MAX_LEVEL;
 	
-	//play_sequence();
+	play_sequence();
+	return 1;
 	
 	int button_state = 0;
 	while(1)
