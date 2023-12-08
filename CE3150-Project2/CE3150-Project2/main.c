@@ -221,7 +221,7 @@ void display_level_leds()
 	//as there is only 3 leds to display the level
 	if (LVL==0 || LVL > MAX_LEVEL)	return;
 	//display current levels on leds
-	PORTD &= ~(LVL-1);
+	PORTD &= ~(LVL); (used first 4 leds)
 	
 }
 
@@ -456,7 +456,7 @@ int wait_until_button_clicked()
 }
 
 void play_game()
-{///////////////////////''
+{
 	int button_state = 0;
 	
 	generate_simon_pattern();
@@ -472,6 +472,7 @@ void play_game()
 		}
 		else
 		{
+			display_level_leds();
 			play_sequence();
 			int buttons_pressed = 0;
 			while((buttons_pressed < LVL) && playing)
@@ -485,6 +486,7 @@ void play_game()
 				}
 			}
 			if (playing) LVL++;
+			half_second_delay();
 			half_second_delay();
 		}
 	}
