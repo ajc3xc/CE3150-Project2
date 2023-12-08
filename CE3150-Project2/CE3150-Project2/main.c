@@ -410,19 +410,11 @@ void wait_until_ready_to_play()
 	PORTD |= (1<<PORTD0);
 }
 
-int main(void)
+//wait until a buton clicked, then return the value
+int wait_until_button_clicked()
 {
-	initialize_ports();
-	generate_simon_pattern();
-	
-	LVL = MAX_LEVEL;
-	
-	wait_until_ready_to_play();
-	//play_sequence();
-	return 1;
-	
 	int button_state = 0;
-	while(1)
+	while(button_state==0)
 	{
 		//all these buttons wait until they're unpressed before continuing
 		//prevents unintentional button spamming
@@ -431,14 +423,15 @@ int main(void)
 		{
 			button_state = 1;
 			light_simon_led(button_state);
+			play_speaker(two_to_the_power_of(button_state));
 			while (!(PINE & (1 << PINE6)));
-			button_state = 1;
 		}
 		//button 6 pressed
 		else if (!(PINA & (1 << PINA4)))
 		{
 			button_state = 2;
 			light_simon_led(button_state);
+			play_speaker(two_to_the_power_of(button_state));
 			while (!(PINA & (1 << PINA4)));
 		}
 		//button 8 pressed
@@ -446,6 +439,7 @@ int main(void)
 		{
 			button_state = 3;
 			light_simon_led(button_state);
+			play_speaker(two_to_the_power_of(button_state));
 			while (!(PINA & (1 << PINA6)));
 		}
 		//button 9 pressed
@@ -453,14 +447,63 @@ int main(void)
 		{
 			button_state = 4;
 			light_simon_led(button_state);
+			play_speaker(two_to_the_power_of(button_state));
 			while (!(PINA & (1 << PINA7)));
 		}
-		else button_state = 0;
-		light_simon_led(button_state);
-		half_second_delay();
+		light_simon_led(0); //turn off all led lights
 	}
+	return button_state;
+}
+
+void play_game()
+{///////////////////////''
+	int button_state = 0;
 	
-	while(1);
+	generate_simon_pattern();
+	LVL = 1;
+	
+	int playing = 1;
+	while(playing)
+	{
+		if(LVL > MAX_LEVEL)
+		{
+			playing = 0;
+			win_game();
+		}
+		else
+		{
+			play_sequence();
+			int buttons_pressed = 0;
+			while((buttons_pressed < LVL) && playing)
+			{
+				int button_clicked = wait_until_button_clicked();
+				if (button_clicked == SEQUENCE[buttons_pressed]) buttons_pressed++;
+				else
+				{
+					lose_game();
+					playing = 0;
+				}
+			}
+			if (playing) LVL++;
+			half_second_delay();
+		}
+	}
+}
+
+int main(void)
+{
+	initialize_ports();
+	
+	while(1)
+	{
+		wait_until_ready_to_play();
+		half_second_delay();
+		half_second_delay();
+		play_game();
+	}
+	generate_simon_pattern();
+
+	return 0;
 	
 	/*
 	sei();				// set interrupt enable
