@@ -190,16 +190,16 @@ void light_simon_led(int led_to_light)
 	switch(led_to_light)
 	{
 		case 1: //turn on port D bit 7 (9th led)
-			PORTD &= ~(1<<PORTD7);
+			PORTE &= ~(1<<PORTE5);
 			break;
 		case 2: //turn on port D bit 1 (8th led)
-			PORTD &= ~(1<<PORTD6);
-			break;
-		case 3: //turn on port D bit 4 (6th led)
 			PORTD &= ~(1<<PORTD4);
 			break;
+		case 3: //turn on port D bit 4 (6th led)
+			PORTD &= ~(1<<PORTD6);
+			break;
 		case 4: //turn on port E bit 5 (4th led)
-			PORTE &= ~(1<<PORTE5);
+			PORTD &= ~(1<<PORTD7);
 			break;
 		default:
 			break;
@@ -381,13 +381,42 @@ int main(void)
 	
 	//play_sequence();
 	
+	int button_state = 0;
 	while(1)
 	{
-		//int value = (1<<PINE6);
-		if (!(PINE & (1 << PINE6))) PORTE &= ~(1<<PORTE5);
-		else if (PINE & (1 << PINE6)) PORTE |= (1<<PORTE5);
-		//if (PINA7 == 1)	PORTD &= ~(1<<PORTD7);
-		PORTD = PINA;
+		//all these buttons wait until they're unpressed before continuing
+		//prevents unintentional button spamming
+		//button 5 pressed
+		if (!(PINE & (1 << PINE6)))
+		{
+			button_state = 1;
+			light_simon_led(button_state);
+			while (!(PINE & (1 << PINE6)));
+			button_state = 1;
+		}
+		//button 6 pressed
+		else if (!(PINA & (1 << PINA4)))
+		{
+			button_state = 2;
+			light_simon_led(button_state);
+			//while (!(PINA & (1 << PINA4)));
+		}
+		//button 8 pressed
+		else if (!(PINA & (1 << PINA6)))
+		{
+			button_state = 3;
+			light_simon_led(button_state);
+			while (!(PINA & (1 << PINA6)));
+		}
+		//button 9 pressed
+		else if (!(PINA & (1 << PINA7)))
+		{
+			button_state = 4;
+			light_simon_led(button_state);
+			while (!(PINA & (1 << PINA7)));
+		}
+		else button_state = 0;
+		light_simon_led(button_state);
 		half_second_delay();
 	}
 	
