@@ -34,7 +34,9 @@ int timerOverflows[3]; //array checking whether the timer has overflowed or not
 
 
 void generate_simon_pattern(){
-	srand(time(NULL));
+	//since this can be called multiple times, srand shouldn't be here (it regenerates the same pattern)
+	//it should be in main
+	//srand(time(NULL));
 	for(int i=0 ; i<MAX_LEVEL ; i++){
 		SEQUENCE[i] = (rand() % 4) + 1; //generate a random number from 1-4 inclusive
 	}
@@ -221,7 +223,7 @@ void display_level_leds()
 	//as there is only 3 leds to display the level
 	if (LVL==0 || LVL > MAX_LEVEL)	return;
 	//display current levels on leds
-	PORTD &= ~(LVL); (used first 4 leds)
+	PORTD &= ~(LVL); //(used first 4 leds)
 	
 }
 
@@ -495,7 +497,7 @@ void play_game()
 int main(void)
 {
 	initialize_ports();
-	
+	srand(time(NULL));
 	while(1)
 	{
 		wait_until_ready_to_play();
