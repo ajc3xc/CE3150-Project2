@@ -146,8 +146,7 @@ void play_speaker(int divisor)
 	{
 		//poll until timer overflows
 		while (!(TIFR2 & (1<<TOV2)));
-		PORTE ^= (1<<PORTE4); //toggle PORTE6
-		//PORTE ^= (1<<PORTE5); //toggle PORTE5
+		PORTE ^= (1<<PORTE4); //toggle PORTE4
 		TCNT2 = TIMER_VAL; //reset tcnt2
 		TIFR2 = 1<<TOV2; //need to reset the overflow flag bit
 		counter++;
