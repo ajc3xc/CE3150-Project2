@@ -61,6 +61,7 @@ void initialize_ports()
 //1 minute time delay
 //used when playing the simon game
 void start_minute_time_limit() {
+	timed_out = 0; //needs to be reset here in case you won and the timer is still running
 	TCNT1 = FOUR_SECOND_TIME_VAL;
 	TCCR1A = 0x00; //normal clock
 	TCCR1B |= 0x05; // normal clock, prescaler 1024
@@ -379,7 +380,7 @@ int wait_until_button_clicked()
 		else if((timed_out))
 		{
 			button_state = 5; //5 will always be invalid
-			timed_out = 0; //reset timed_out variable
+			//timed_out = 0; //reset timed_out variable
 		}
 		light_simon_led(0); //turn off all led lights
 	}
