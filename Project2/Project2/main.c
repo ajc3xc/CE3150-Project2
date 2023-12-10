@@ -30,11 +30,11 @@ int main(void)
     while (1) 
     {
 		
-		if ((PINA & (1<<6)) == 0) // If button 8 is pressed
+		if ((PINA & (1<<6)) == 0) // If button 8 is pressed (UP BUTTON)
 		{
 			// Count up (equivalent to CHECK_UP in asm)
 			
-			if (COUNT >= 30)
+			if (COUNT >= 30) // if going to exceed bounds
 			{
 				COUNT = 0; // wrap around to bottom
 				CHIRP(); // play tone on speaker
@@ -47,11 +47,11 @@ int main(void)
 			SET_LEDS(); // update LED states
 			QDELAY(); // wait a bit
 		}
-		else if ((PINA & (1<<5)) == 0) // Else if button 7 is pressed
+		else if ((PINA & (1<<5)) == 0) // Else if button 7 is pressed (DOWN BUTTON)
 		{
 			// Count down (equivalent to CHECK_DOWN in asm)
 			
-			if (COUNT <= 0)
+			if (COUNT <= 0)  // if going to exceed bounds
 			{
 				COUNT = 30; // wrap around to top
 				CHIRP(); // play tone on speaker
@@ -64,7 +64,7 @@ int main(void)
 			SET_LEDS(); // update LED states
 			QDELAY(); // wait a bit
 		}
-		else if ((PINA & (1<<4)) == 0) // Else if button 6 is pressed
+		else if ((PINA & (1<<4)) == 0) // Else if button 6 is pressed (RESET BUTTON)
 		{
 			// Reset Count (equivalent to RESET_COUNT in asm)
 			COUNT = 0;
