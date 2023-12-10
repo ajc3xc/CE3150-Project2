@@ -62,6 +62,7 @@ void initialize_ports()
 //used when playing the simon game
 void start_minute_time_limit() {
 	timed_out = 0; //needs to be reset here in case you won and the timer is still running
+	timer_1_iterations_counter = 0;
 	TCNT1 = FOUR_SECOND_TIME_VAL;
 	TCCR1A = 0x00; //normal clock
 	TCCR1B |= 0x05; // normal clock, prescaler 1024
