@@ -275,10 +275,7 @@ void wait_until_ready_to_play()
 //used when selecting a button
 void light_simon_led(int led_to_light)
 {
-	//0 means on, 1 means off
-	//PORTD |= 0xFF; //turn off portd
-	//PORTE |= 0b00110000; //turn off port e
-	
+	//0 means on, 1 means off	
 	//turn off simon specific leds
 	PORTD |= (1<<PORTD7);
 	PORTD |= (1<<PORTD6);
@@ -312,6 +309,7 @@ void display_level_leds()
 	PORTD |= (1<<PORTD0);
 	PORTD |= (1<<PORTD1);
 	PORTD |= (1<<PORTD2);
+	PORTD |= (1<<PORTD3);
 	
 	//this logic only works if there is up to 8 levels, and there isn't a level 0
 	//as there is only 3 leds to display the level
