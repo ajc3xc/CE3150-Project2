@@ -3,31 +3,31 @@ Project2.elf:     file format elf32-avr
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .data         00000000  00800100  00800100  0000020a  2**0
+  0 .data         00000000  00800100  00800100  00000228  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  1 .text         00000196  00000000  00000000  00000074  2**1
+  1 .text         000001b4  00000000  00000000  00000074  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  2 .bss          00000001  00800100  00800100  0000020a  2**0
+  2 .bss          00000001  00800100  00800100  00000228  2**0
                   ALLOC
-  3 .comment      00000030  00000000  00000000  0000020a  2**0
+  3 .comment      00000030  00000000  00000000  00000228  2**0
                   CONTENTS, READONLY
-  4 .note.gnu.avr.deviceinfo 00000040  00000000  00000000  0000023c  2**2
+  4 .note.gnu.avr.deviceinfo 00000040  00000000  00000000  00000258  2**2
                   CONTENTS, READONLY
-  5 .debug_aranges 00000038  00000000  00000000  0000027c  2**0
+  5 .debug_aranges 00000038  00000000  00000000  00000298  2**0
                   CONTENTS, READONLY, DEBUGGING
-  6 .debug_info   00000bad  00000000  00000000  000002b4  2**0
+  6 .debug_info   00000bf0  00000000  00000000  000002d0  2**0
                   CONTENTS, READONLY, DEBUGGING
-  7 .debug_abbrev 00000a5c  00000000  00000000  00000e61  2**0
+  7 .debug_abbrev 00000a5c  00000000  00000000  00000ec0  2**0
                   CONTENTS, READONLY, DEBUGGING
-  8 .debug_line   000003f6  00000000  00000000  000018bd  2**0
+  8 .debug_line   000003f3  00000000  00000000  0000191c  2**0
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_frame  00000054  00000000  00000000  00001cb4  2**2
+  9 .debug_frame  00000054  00000000  00000000  00001d10  2**2
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_str    0000050b  00000000  00000000  00001d08  2**0
+ 10 .debug_str    0000050b  00000000  00000000  00001d64  2**0
                   CONTENTS, READONLY, DEBUGGING
- 11 .debug_loc    000000d0  00000000  00000000  00002213  2**0
+ 11 .debug_loc    000000f8  00000000  00000000  0000226f  2**0
                   CONTENTS, READONLY, DEBUGGING
- 12 .debug_ranges 00000028  00000000  00000000  000022e3  2**0
+ 12 .debug_ranges 00000028  00000000  00000000  00002367  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -106,175 +106,190 @@ Disassembly of section .text:
   e2:	a1 30       	cpi	r26, 0x01	; 1
   e4:	b2 07       	cpc	r27, r18
   e6:	e1 f7       	brne	.-8      	; 0xe0 <.do_clear_bss_loop>
-  e8:	0e 94 97 00 	call	0x12e	; 0x12e <main>
-  ec:	0c 94 c9 00 	jmp	0x192	; 0x192 <_exit>
+  e8:	0e 94 a0 00 	call	0x140	; 0x140 <main>
+  ec:	0c 94 d8 00 	jmp	0x1b0	; 0x1b0 <_exit>
 
 000000f0 <__bad_interrupt>:
   f0:	0c 94 00 00 	jmp	0	; 0x0 <__vectors>
 
-000000f4 <SET_LEDS>:
-	}
-}
-
-void SET_LEDS()
-{
-	PORTD = COUNT ^ 0b11111111; // Set LEDs according to one's complement of COUNT (since LEDs are active low) (SET_LEDS in asm)	
-  f4:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__DATA_REGION_ORIGIN__>
-  f8:	80 95       	com	r24
-  fa:	8b b9       	out	0x0b, r24	; 11
-  fc:	08 95       	ret
-
-000000fe <CHIRP>:
-}
-
-void CHIRP()
-{
-	for (uint8_t i = 0x2F; i > 0; i--)
-  fe:	9f e2       	ldi	r25, 0x2F	; 47
- 100:	13 c0       	rjmp	.+38     	; 0x128 <CHIRP+0x2a>
-	{
-		PORTE &= ~(1<<4); // Set buzzer to high
- 102:	8e b1       	in	r24, 0x0e	; 14
- 104:	8f 7e       	andi	r24, 0xEF	; 239
- 106:	8e b9       	out	0x0e, r24	; 14
+000000f4 <QDELAY>:
 	#else
 		//round up by default
 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
 	#endif
 
 	__builtin_avr_delay_cycles(__ticks_dc);
- 108:	e7 ee       	ldi	r30, 0xE7	; 231
- 10a:	f3 e6       	ldi	r31, 0x63	; 99
- 10c:	31 97       	sbiw	r30, 0x01	; 1
- 10e:	f1 f7       	brne	.-4      	; 0x10c <CHIRP+0xe>
- 110:	00 c0       	rjmp	.+0      	; 0x112 <CHIRP+0x14>
- 112:	00 00       	nop
-		_delay_ms(12.788); // like SM_DELAY
-		PORTE |= 1<<4; // Set buzzer to low
+  f4:	24 e1       	ldi	r18, 0x14	; 20
+  f6:	81 e7       	ldi	r24, 0x71	; 113
+  f8:	94 e1       	ldi	r25, 0x14	; 20
+  fa:	21 50       	subi	r18, 0x01	; 1
+  fc:	80 40       	sbci	r24, 0x00	; 0
+  fe:	90 40       	sbci	r25, 0x00	; 0
+ 100:	e1 f7       	brne	.-8      	; 0xfa <QDELAY+0x6>
+ 102:	00 c0       	rjmp	.+0      	; 0x104 <QDELAY+0x10>
+ 104:	08 95       	ret
+
+00000106 <SET_LEDS>:
+	_delay_ms(837.293); // like "CALL QDELAY" in asm
+}
+
+void SET_LEDS()
+{
+	PORTD = COUNT ^ 0b11111111; // Set LEDs according to one's complement of COUNT (since LEDs are active low) (SET_LEDS in asm)	
+ 106:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__DATA_REGION_ORIGIN__>
+ 10a:	80 95       	com	r24
+ 10c:	8b b9       	out	0x0b, r24	; 11
+ 10e:	08 95       	ret
+
+00000110 <CHIRP>:
+}
+
+void CHIRP()
+{
+	for (uint8_t i = 0x2F; i > 0; i--)
+ 110:	9f e2       	ldi	r25, 0x2F	; 47
+ 112:	13 c0       	rjmp	.+38     	; 0x13a <CHIRP+0x2a>
+	{
+		PORTE &= ~(1<<4); // Set buzzer to high
  114:	8e b1       	in	r24, 0x0e	; 14
- 116:	80 61       	ori	r24, 0x10	; 16
+ 116:	8f 7e       	andi	r24, 0xEF	; 239
  118:	8e b9       	out	0x0e, r24	; 14
  11a:	e7 ee       	ldi	r30, 0xE7	; 231
  11c:	f3 e6       	ldi	r31, 0x63	; 99
  11e:	31 97       	sbiw	r30, 0x01	; 1
- 120:	f1 f7       	brne	.-4      	; 0x11e <CHIRP+0x20>
- 122:	00 c0       	rjmp	.+0      	; 0x124 <CHIRP+0x26>
+ 120:	f1 f7       	brne	.-4      	; 0x11e <CHIRP+0xe>
+ 122:	00 c0       	rjmp	.+0      	; 0x124 <CHIRP+0x14>
  124:	00 00       	nop
+		_delay_ms(12.788); // like SM_DELAY
+		PORTE |= 1<<4; // Set buzzer to low
+ 126:	8e b1       	in	r24, 0x0e	; 14
+ 128:	80 61       	ori	r24, 0x10	; 16
+ 12a:	8e b9       	out	0x0e, r24	; 14
+ 12c:	e7 ee       	ldi	r30, 0xE7	; 231
+ 12e:	f3 e6       	ldi	r31, 0x63	; 99
+ 130:	31 97       	sbiw	r30, 0x01	; 1
+ 132:	f1 f7       	brne	.-4      	; 0x130 <CHIRP+0x20>
+ 134:	00 c0       	rjmp	.+0      	; 0x136 <CHIRP+0x26>
+ 136:	00 00       	nop
 	PORTD = COUNT ^ 0b11111111; // Set LEDs according to one's complement of COUNT (since LEDs are active low) (SET_LEDS in asm)	
 }
 
 void CHIRP()
 {
 	for (uint8_t i = 0x2F; i > 0; i--)
- 126:	91 50       	subi	r25, 0x01	; 1
- 128:	91 11       	cpse	r25, r1
- 12a:	eb cf       	rjmp	.-42     	; 0x102 <CHIRP+0x4>
+ 138:	91 50       	subi	r25, 0x01	; 1
+ 13a:	91 11       	cpse	r25, r1
+ 13c:	eb cf       	rjmp	.-42     	; 0x114 <CHIRP+0x4>
 		PORTE &= ~(1<<4); // Set buzzer to high
 		_delay_ms(12.788); // like SM_DELAY
 		PORTE |= 1<<4; // Set buzzer to low
 		_delay_ms(12.788); // like SM_DELAY
 	}
- 12c:	08 95       	ret
+ 13e:	08 95       	ret
 
-0000012e <main>:
+00000140 <main>:
 void SET_LEDS(); // A function to update LEDs
 void CHIRP(); // Plays a chirp from the speaker
 
 int main(void)
 {
 	DDRA = 0x00; // Port A in input mode
- 12e:	11 b8       	out	0x01, r1	; 1
+ 140:	11 b8       	out	0x01, r1	; 1
 	PORTA = 0xFF; // Enable pull-ups on PA
- 130:	8f ef       	ldi	r24, 0xFF	; 255
- 132:	82 b9       	out	0x02, r24	; 2
+ 142:	8f ef       	ldi	r24, 0xFF	; 255
+ 144:	82 b9       	out	0x02, r24	; 2
 	
 	DDRD = 0xFF; // Port D in output mode
- 134:	8a b9       	out	0x0a, r24	; 10
+ 146:	8a b9       	out	0x0a, r24	; 10
 	PORTD = 0xFF; // turn off LEDS (active low)
- 136:	8b b9       	out	0x0b, r24	; 11
+ 148:	8b b9       	out	0x0b, r24	; 11
 	
 	DDRE = 0b00110000; // Set input/output for Port E
- 138:	90 e3       	ldi	r25, 0x30	; 48
- 13a:	9d b9       	out	0x0d, r25	; 13
-	PORTE = 0xFF;
- 13c:	8e b9       	out	0x0e, r24	; 14
+ 14a:	90 e3       	ldi	r25, 0x30	; 48
+ 14c:	9d b9       	out	0x0d, r25	; 13
+	PORTE = 0xFF; // ready Port E
+ 14e:	8e b9       	out	0x0e, r24	; 14
 	
     while (1) 
     {
 		
 		if ((PINA & (1<<6)) == 0) // If button 8 is pressed
- 13e:	06 99       	sbic	0x00, 6	; 0
- 140:	0f c0       	rjmp	.+30     	; 0x160 <main+0x32>
+ 150:	06 99       	sbic	0x00, 6	; 0
+ 152:	11 c0       	rjmp	.+34     	; 0x176 <main+0x36>
 		{
 			// Count up (equivalent to CHECK_UP in asm)
 			
 			if (COUNT >= 30)
- 142:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__DATA_REGION_ORIGIN__>
- 146:	8e 31       	cpi	r24, 0x1E	; 30
- 148:	28 f0       	brcs	.+10     	; 0x154 <main+0x26>
+ 154:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__DATA_REGION_ORIGIN__>
+ 158:	8e 31       	cpi	r24, 0x1E	; 30
+ 15a:	28 f0       	brcs	.+10     	; 0x166 <main+0x26>
 			{
 				COUNT = 0; // wrap around to bottom
- 14a:	10 92 00 01 	sts	0x0100, r1	; 0x800100 <__DATA_REGION_ORIGIN__>
+ 15c:	10 92 00 01 	sts	0x0100, r1	; 0x800100 <__DATA_REGION_ORIGIN__>
 				CHIRP(); // play tone on speaker
- 14e:	0e 94 7f 00 	call	0xfe	; 0xfe <CHIRP>
- 152:	03 c0       	rjmp	.+6      	; 0x15a <main+0x2c>
+ 160:	0e 94 88 00 	call	0x110	; 0x110 <CHIRP>
+ 164:	03 c0       	rjmp	.+6      	; 0x16c <main+0x2c>
 			}
 			else
 			{
 				COUNT++; // increment COUNT
- 154:	8f 5f       	subi	r24, 0xFF	; 255
- 156:	80 93 00 01 	sts	0x0100, r24	; 0x800100 <__DATA_REGION_ORIGIN__>
+ 166:	8f 5f       	subi	r24, 0xFF	; 255
+ 168:	80 93 00 01 	sts	0x0100, r24	; 0x800100 <__DATA_REGION_ORIGIN__>
 			}
 			
 			SET_LEDS(); // update LED states
- 15a:	0e 94 7a 00 	call	0xf4	; 0xf4 <SET_LEDS>
- 15e:	ef cf       	rjmp	.-34     	; 0x13e <main+0x10>
+ 16c:	0e 94 83 00 	call	0x106	; 0x106 <SET_LEDS>
 			QDELAY(); // wait a bit
+ 170:	0e 94 7a 00 	call	0xf4	; 0xf4 <QDELAY>
+ 174:	ed cf       	rjmp	.-38     	; 0x150 <main+0x10>
 		}
 		else if ((PINA & (1<<5)) == 0) // Else if button 7 is pressed
- 160:	05 99       	sbic	0x00, 5	; 0
- 162:	10 c0       	rjmp	.+32     	; 0x184 <main+0x56>
+ 176:	05 99       	sbic	0x00, 5	; 0
+ 178:	12 c0       	rjmp	.+36     	; 0x19e <main+0x5e>
 		{
 			// Count down (equivalent to CHECK_DOWN in asm)
 			
 			if (COUNT <= 0)
- 164:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__DATA_REGION_ORIGIN__>
- 168:	81 11       	cpse	r24, r1
- 16a:	06 c0       	rjmp	.+12     	; 0x178 <main+0x4a>
+ 17a:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__DATA_REGION_ORIGIN__>
+ 17e:	81 11       	cpse	r24, r1
+ 180:	06 c0       	rjmp	.+12     	; 0x18e <main+0x4e>
 			{
 				COUNT = 30; // wrap around to top
- 16c:	8e e1       	ldi	r24, 0x1E	; 30
- 16e:	80 93 00 01 	sts	0x0100, r24	; 0x800100 <__DATA_REGION_ORIGIN__>
+ 182:	8e e1       	ldi	r24, 0x1E	; 30
+ 184:	80 93 00 01 	sts	0x0100, r24	; 0x800100 <__DATA_REGION_ORIGIN__>
 				CHIRP(); // play tone on speaker
- 172:	0e 94 7f 00 	call	0xfe	; 0xfe <CHIRP>
- 176:	03 c0       	rjmp	.+6      	; 0x17e <main+0x50>
+ 188:	0e 94 88 00 	call	0x110	; 0x110 <CHIRP>
+ 18c:	03 c0       	rjmp	.+6      	; 0x194 <main+0x54>
 			}
 			else
 			{
 				COUNT--; // decrement COUNT
- 178:	81 50       	subi	r24, 0x01	; 1
- 17a:	80 93 00 01 	sts	0x0100, r24	; 0x800100 <__DATA_REGION_ORIGIN__>
+ 18e:	81 50       	subi	r24, 0x01	; 1
+ 190:	80 93 00 01 	sts	0x0100, r24	; 0x800100 <__DATA_REGION_ORIGIN__>
 			}
 			
 			SET_LEDS(); // update LED states
- 17e:	0e 94 7a 00 	call	0xf4	; 0xf4 <SET_LEDS>
- 182:	dd cf       	rjmp	.-70     	; 0x13e <main+0x10>
+ 194:	0e 94 83 00 	call	0x106	; 0x106 <SET_LEDS>
 			QDELAY(); // wait a bit
+ 198:	0e 94 7a 00 	call	0xf4	; 0xf4 <QDELAY>
+ 19c:	d9 cf       	rjmp	.-78     	; 0x150 <main+0x10>
 		}
 		else if ((PINA & (1<<4)) == 0) // Else if button 6 is pressed
- 184:	04 99       	sbic	0x00, 4	; 0
- 186:	db cf       	rjmp	.-74     	; 0x13e <main+0x10>
+ 19e:	04 99       	sbic	0x00, 4	; 0
+ 1a0:	d7 cf       	rjmp	.-82     	; 0x150 <main+0x10>
 		{
 			// Reset Count (equivalent to RESET_COUNT in asm)
 			COUNT = 0;
- 188:	10 92 00 01 	sts	0x0100, r1	; 0x800100 <__DATA_REGION_ORIGIN__>
+ 1a2:	10 92 00 01 	sts	0x0100, r1	; 0x800100 <__DATA_REGION_ORIGIN__>
 			
 			SET_LEDS(); // update LED states
- 18c:	0e 94 7a 00 	call	0xf4	; 0xf4 <SET_LEDS>
- 190:	d6 cf       	rjmp	.-84     	; 0x13e <main+0x10>
+ 1a6:	0e 94 83 00 	call	0x106	; 0x106 <SET_LEDS>
+			QDELAY(); // wait a bit
+ 1aa:	0e 94 7a 00 	call	0xf4	; 0xf4 <QDELAY>
+ 1ae:	d0 cf       	rjmp	.-96     	; 0x150 <main+0x10>
 
-00000192 <_exit>:
- 192:	f8 94       	cli
+000001b0 <_exit>:
+ 1b0:	f8 94       	cli
 
-00000194 <__stop_program>:
- 194:	ff cf       	rjmp	.-2      	; 0x194 <__stop_program>
+000001b2 <__stop_program>:
+ 1b2:	ff cf       	rjmp	.-2      	; 0x1b2 <__stop_program>

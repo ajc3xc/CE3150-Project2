@@ -1,8 +1,7 @@
 /*
- * Project2.c
- *
- * Created: 12/9/2023 6:35:52 AM
- * Author : Jerrett
+	Comp Eng 3150 Project 2 Code Conversion 
+	Members: Adam Camerer, Evan Parrish, Ethan Mollet, Jerrett Martin
+	Date: 12/7/2023
  */ 
 
 #define F_CPU 8000000UL
