@@ -5,94 +5,96 @@
  * Author : Jerrett
  */ 
 
-#include <avr/io.h>
-#include <stdio.h>
+#define F_CPU 8000000UL
 
-void CHECK_UP();
-void CHECK_DOWN();
-void CHECK_RESET();
-void CHECK_SHIFT_MODE();
-void RESET_COUNT();
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <util/delay.h>
 
 uint8_t COUNT = 0; // Where we store the current count. We used R16 in ASM
+
+void QDELAY(); // A function for causing a small amount of delay
+void SET_LEDS(); // A function to update LEDs
+void CHIRP(); // Plays a chirp from the speaker
 
 int main(void)
 {
 	DDRA = 0x00; // Port A in input mode
 	PORTA = 0xFF; // Enable pull-ups on PA
 	
-	COUNT = 0;
+	DDRD = 0xFF; // Port D in output mode
+	PORTD = 0xFF; // turn off LEDS (active low)
+	
+	DDRE = 0b00110000; // Set input/output for Port E
+	PORTE = 0xFF; // ready Port E
 	
     while (1) 
     {
 		
-		if ((PINA & (1<<6)) != 0) // Check if button 8 is pressed
+		if ((PINA & (1<<6)) == 0) // If button 8 is pressed
 		{
-			if ((PINA & (1<<5)) != 0) // Check if button 7 is pressed
+			// Count up (equivalent to CHECK_UP in asm)
+			
+			if (COUNT >= 30)
 			{
-				if ((PINA & (1<<4)) != 0) // Check if button 6 is pressed
-				{
-					CHECK_SHIFT_MODE();
-				}
-				else
-				{
-					RESET_COUNT();
-				}
+				COUNT = 0; // wrap around to bottom
+				CHIRP(); // play tone on speaker
 			}
 			else
 			{
-				CHECK_DOWN();
+				COUNT++; // increment COUNT
 			}
+			
+			SET_LEDS(); // update LED states
+			QDELAY(); // wait a bit
 		}
-		else
+		else if ((PINA & (1<<5)) == 0) // Else if button 7 is pressed
 		{
-			CHECK_UP();	
+			// Count down (equivalent to CHECK_DOWN in asm)
+			
+			if (COUNT <= 0)
+			{
+				COUNT = 30; // wrap around to top
+				CHIRP(); // play tone on speaker
+			}
+			else
+			{
+				COUNT--; // decrement COUNT
+			}
+			
+			SET_LEDS(); // update LED states
+			QDELAY(); // wait a bit
 		}
-		
-		// TODO: Handle LEDS
-		// TODO: Delay here
+		else if ((PINA & (1<<4)) == 0) // Else if button 6 is pressed
+		{
+			// Reset Count (equivalent to RESET_COUNT in asm)
+			COUNT = 0;
+			
+			SET_LEDS(); // update LED states
+			QDELAY(); // wait a bit
+		}
     }
 	
 	return 0;
 }
 
-void CHECK_UP()
+void QDELAY()
 {
-	// Guard clause to check if we need to wrap around to bottom
-	if (COUNT >= 30)
+	_delay_ms(837.293); // like "CALL QDELAY" in asm
+}
+
+void SET_LEDS()
+{
+	PORTD = COUNT ^ 0b11111111; // Set LEDs according to one's complement of COUNT (since LEDs are active low) (SET_LEDS in asm)	
+}
+
+void CHIRP()
+{
+	for (uint8_t i = 0x2F; i > 0; i--)
 	{
-		COUNT = 0; // wrap to bottom
-		// TODO: TURN_ON_SPEAKER // play a tone
-		return;
+		PORTE &= ~(1<<4); // Set buzzer to high
+		_delay_ms(12.788); // like SM_DELAY
+		PORTE |= 1<<4; // Set buzzer to low
+		_delay_ms(12.788); // like SM_DELAY
 	}
-	
-	// otherwise, just increment COUNT
-	++COUNT;
-	return;
-}
-
-void CHECK_DOWN()
-{
-	// Guard clause to check if we need to wrap around to top
-	if (COUNT <= 0)
-	{
-		COUNT = 30; // wrap to top
-		// TODO: TURN_ON_SPEAKER // play a tone
-		return;
-	}
-	
-	// otherwise, just decrement COUNT
-	--COUNT;
-	return;
-}
-
-void RESET_COUNT()
-{
-	COUNT = 0;
-	return;
-}
-
-void CHECK_SHIFT_MODE()
-{
-	printf("CHECK_SHIFT_MODE");
 }
